@@ -14,11 +14,6 @@
 ## 🌟 Live Demo
 
 > 🔗 **Live URL:** `https://your-render-url.onrender.com`
-
-**Admin Access (Demo):**
-- Email: `shresthaavaya112@gmail.com`
-- Password: `qwertyuiop@112`
-
 ---
 
 ## ✨ Features
