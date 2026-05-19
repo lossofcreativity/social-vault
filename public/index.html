@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Social Vault - Share what you love</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Loading -->
+        <div id="loading" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Main App -->
+        <div id="mainApp" style="display: none;">
+            <!-- Navbar -->
+            <nav class="navbar">
+                <div class="nav-container">
+                    <div class="logo" onclick="navigateTo('feed')">
+                        <i class="fas fa-vault"></i>
+                        <span>Social Vault</span>
+                    </div>
+
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search users or posts...">
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+
+                    <div class="nav-actions">
+                        <button class="nav-btn" onclick="toggleDarkMode()" title="Dark Mode">
+                            <i class="fas fa-moon" id="darkModeIcon"></i>
+                        </button>
+                        <button class="nav-btn" onclick="openCreatePostModal()" title="Create Post">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                        <button class="nav-btn" onclick="openCreateReelModal()" title="Create Reel">
+                            <i class="fas fa-film"></i>
+                        </button>
+                        <button class="nav-btn" id="notificationsBtn" onclick="openNotifications()"
+                            title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span id="notificationBadge" class="badge" style="display: none;">0</span>
+                        </button>
+                        <button class="nav-btn" id="friendRequestsBtn" onclick="openFriendRequests()"
+                            title="Friend Requests">
+                            <i class="fas fa-user-friends"></i>
+                            <span id="friendRequestBadge" class="badge" style="display: none;">0</span>
+                        </button>
+                        <button class="nav-btn" id="messagesBtn" onclick="openMessages()" title="Messages">
+                            <i class="fas fa-envelope"></i>
+                            <span id="messageBadge" class="badge" style="display: none;">0</span>
+                        </button>
+                        <div class="user-menu">
+                            <img id="navAvatar" class="nav-avatar" alt="Avatar">
+                            <div class="user-dropdown">
+                                <a onclick="viewProfile(currentUser?.username)"><i class="fas fa-user"></i> Profile</a>
+                                <a onclick="navigateTo('reels')"><i class="fas fa-film"></i> Reels</a>
+                                <a onclick="openFriends()"><i class="fas fa-users"></i> Friends</a>
+                                <a onclick="openNotifications()"><i class="fas fa-bell"></i> Notifications</a>
+                                <hr>
+                                <a onclick="openSettings()"><i class="fas fa-cog"></i> Settings</a>
+                                <a onclick="toggleDarkMode()"><i class="fas fa-moon"></i> Dark Mode</a>
+                                <div id="adminMenuLink" style="display: none;">
+                                    <hr>
+                                    <a onclick="openAdminPanel()"><i class="fas fa-shield-alt"></i> Admin Panel</a>
+                                </div>
+                                <hr>
+                                <a onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="main-container">
+                <!-- Left Sidebar -->
+                <aside class="left-sidebar">
+                    <div class="sidebar-menu">
+                        <div class="menu-item" data-view="feed" onclick="navigateTo('feed')">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </div>
+                        <div class="menu-item" data-view="reels" onclick="navigateTo('reels')">
+                            <i class="fas fa-film"></i>
+                            <span>Reels</span>
+                        </div>
+                        <div class="menu-item" data-view="friends" onclick="navigateTo('friends')">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Friends</span>
+                        </div>
+                        <div class="menu-item" data-view="groups" onclick="openGroups()">
+                            <i class="fas fa-users"></i>
+                            <span>Groups</span>
+                        </div>
+                        <div class="menu-item" data-view="notifications" onclick="openNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span>Notifications</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>Filter Feed</h4>
+                        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+                        <button class="filter-btn" data-filter="friends" onclick="setFilter('friends')">Friends</button>
+                        <button class="filter-btn" data-filter="images" onclick="setFilter('images')">
+                            <i class="fas fa-image"></i> Photos
+                        </button>
+                        <button class="filter-btn" data-filter="videos" onclick="setFilter('videos')">
+                            <i class="fas fa-video"></i> Videos
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <main class="content-area" id="contentArea">
+                    <div id="feedContainer"></div>
+                </main>
+                <!-- Sidebar Overlay -->
+                <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebars()"></div>
+                <!-- Mobile Bottom Navigation -->
+                <div class="mobile-bottom-nav">
+                    <button class="bottom-nav-item" data-nav="feed" onclick="navigateToMobile('feed')">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </button>
+                    <button class="bottom-nav-item" data-nav="reels" onclick="navigateToMobile('reels')">
+                        <i class="fas fa-film"></i>
+                        <span>Reels</span>
+                    </button>
+                    <button class="bottom-nav-item" data-nav="create" onclick="navigateToMobile('create')">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Create</span>
+                    </button>
+                    <button class="bottom-nav-item" data-nav="messages" onclick="navigateToMobile('messages')">
+                        <i class="fas fa-envelope"></i>
+                        <span>Chat</span>
+                    </button>
+                    <button class="bottom-nav-item" data-nav="profile" onclick="navigateToMobile('profile')">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </button>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn" onclick="openMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <!-- Mobile Menu Overlay -->
+                <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+
+                <!-- Mobile Menu Sidebar -->
+                <div id="mobileMenuSidebar" class="mobile-menu-sidebar">
+                    <div class="mobile-menu-header">
+                        <div class="mobile-menu-close" onclick="closeMobileMenu()">&times;</div>
+                        <img id="mobileMenuAvatar" class="mobile-menu-avatar" alt="Avatar">
+                        <h3 id="mobileMenuUsername"></h3>
+                    </div>
+
+                    <div class="mobile-menu-items">
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); navigateTo('feed')">
+                            <i class="fas fa-home"></i> Home
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); navigateTo('reels')">
+                            <i class="fas fa-film"></i> Reels
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openCreateReelModal()">
+                            <i class="fas fa-video"></i> Create Reel
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openFriends()">
+                            <i class="fas fa-user-friends"></i> Friends
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openGroups()">
+                            <i class="fas fa-users"></i> Groups
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openNotifications()">
+                            <i class="fas fa-bell"></i> Notifications
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openMessages()">
+                            <i class="fas fa-envelope"></i> Messages
+                        </div>
+                        <div class="mobile-menu-divider"></div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); toggleDarkMode()">
+                            <i class="fas fa-moon"></i> Dark Mode
+                        </div>
+                        <div class="mobile-menu-item" onclick="closeMobileMenu(); openSettings()">
+                            <i class="fas fa-cog"></i> Settings
+                        </div>
+                        <div id="mobileAdminMenu" style="display: none;">
+                            <div class="mobile-menu-divider"></div>
+                            <div class="mobile-menu-item" onclick="closeMobileMenu(); openAdminPanel()">
+                                <i class="fas fa-shield-alt"></i> Admin Panel
+                            </div>
+                        </div>
+                        <div class="mobile-menu-divider"></div>
+                        <div class="mobile-menu-item logout" onclick="closeMobileMenu(); logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </div>
+                    </div>
+                </div>
+                <!-- Right Sidebar -->
+                <aside class="right-sidebar">
+                    <!-- Friends Menu -->
+                    <div class="friends-menu-container">
+                        <div class="friends-menu-header">
+                            <h3><i class="fas fa-user-friends"></i> Friends</h3>
+                            <span class="view-all-link" onclick="openFriends()">View All</span>
+                        </div>
+                        <div id="friendsListCompact" class="friends-list-compact">
+                            <div class="empty-friends">
+                                <i class="fas fa-user-plus"></i>
+                                <p>No friends yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Friend Requests Card -->
+                    <div id="friendRequestsCard" class="friend-request-card" style="display: none;">
+                        <div class="friends-menu-header">
+                            <h3><i class="fas fa-user-plus"></i> Friend Requests</h3>
+                            <span class="view-all-link" onclick="openFriendRequests()">View All</span>
+                        </div>
+                        <div id="friendRequestsCompact"></div>
+                    </div>
+
+                    <!-- Trending Card -->
+                    <div class="trending-card">
+                        <h3><i class="fas fa-fire"></i> Trending Hashtags</h3>
+                        <div id="trendingHashtagsList">
+                            <div style="text-align: center; padding: 1rem;">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div class="suggestions-card">
+                        <h3><i class="fas fa-user-plus"></i> Suggested Friends</h3>
+                        <div id="suggestionsList"></div>
+                    </div>
+
+                    <div class="online-friends-card">
+                        <h3><i class="fas fa-circle" style="color: #31a24c; font-size: 10px;"></i> Online Friends</h3>
+                        <div id="onlineFriendsList"></div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <!-- Create Post Modal -->
+        <div id="createPostModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create Post</h2>
+                    <span class="close" onclick="closeCreatePostModal()">&times;</span>
+                </div>
+                <form id="createPostForm" enctype="multipart/form-data">
+                    <input type="text" id="postTitle" placeholder="Title *" required maxlength="200">
+                    <textarea id="postDescription" placeholder="What's on your mind?" rows="4"></textarea>
+                    <select id="postVisibility">
+                        <option value="public">🌍 Public</option>
+                        <option value="friends">👥 Friends Only</option>
+                    </select>
+
+                    <!-- Multiple File Upload Area -->
+                    <div class="media-upload-area" onclick="document.getElementById('postMediaInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload photos or videos</p>
+                        <small>Max 10 files, 500MB each (JPG, PNG, GIF, MP4, MOV)</small>
+                        <input type="file" id="postMediaInput" accept="image/*,video/*" multiple style="display: none">
+                    </div>
+
+                    <!-- Multiple Files Preview Area -->
+                    <div id="postMediaPreview" class="media-preview-grid" style="display: none;">
+                        <div class="preview-header">
+                            <span>Selected Files (<span id="fileCount">0</span>)</span>
+                            <button type="button" class="clear-all-btn" onclick="clearAllMedia()">Clear All</button>
+                        </div>
+                        <div id="previewGrid" class="preview-grid"></div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Post to Vault ✨</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Create Reel Modal -->
+        <div id="createReelModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create Reel</h2>
+                    <span class="close" onclick="closeCreateReelModal()">&times;</span>
+                </div>
+                <form id="createReelForm" enctype="multipart/form-data">
+                    <input type="text" id="reelTitle" placeholder="Reel Title" maxlength="100">
+                    <textarea id="reelDescription" placeholder="Description" rows="3"></textarea>
+                    <div class="media-upload-area" onclick="document.getElementById('reelVideoInput').click()">
+                        <i class="fas fa-video"></i>
+                        <p>Click to upload video</p>
+                        <small>Max 500MB (MP4, MOV, AVI)</small>
+                        <input type="file" id="reelVideoInput" accept="video/*" style="display: none">
+                    </div>
+                    <div id="reelPreview" class="media-preview" style="display: none;">
+                        <video controls style="max-width: 100%; max-height: 300px;"></video>
+                        <button type="button" onclick="removeReelMedia()">Remove</button>
+                    </div>
+                    <button type="submit" class="btn-primary">Post Reel 🎬</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Post Detail Modal -->
+        <div id="postModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Post</h2>
+                    <span class="close" onclick="closePostModal()">&times;</span>
+                </div>
+                <div id="postDetailContent"></div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div id="profileModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Profile</h2>
+                    <span class="close" onclick="closeProfileModal()">&times;</span>
+                </div>
+                <div id="profileContent"></div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div id="editProfileModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Profile</h2>
+                    <span class="close" onclick="closeEditProfileModal()">&times;</span>
+                </div>
+                <form id="editProfileForm">
+                    <div class="avatar-upload">
+                        <img id="editAvatarPreview" alt="Avatar">
+                        <button type="button" onclick="document.getElementById('avatarInput').click()">
+                            <i class="fas fa-camera"></i> Change Avatar
+                        </button>
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none">
+                    </div>
+                    <div class="cover-upload">
+                        <button type="button" onclick="document.getElementById('coverInput').click()">
+                            <i class="fas fa-image"></i> Change Cover Photo
+                        </button>
+                        <input type="file" id="coverInput" accept="image/*" style="display: none">
+                    </div>
+                    <input type="text" id="editUsername" placeholder="Username" required>
+                    <textarea id="editBio" placeholder="Bio" rows="3"></textarea>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div id="createGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-users"></i> Create Group Chat</h2>
+                    <span class="close" onclick="closeCreateGroupModal()">&times;</span>
+                </div>
+                <form id="createGroupForm" style="padding: 1.5rem;">
+                    <div class="form-group">
+                        <label>Group Name</label>
+                        <input type="text" id="groupName" placeholder="Enter group name" required
+                            style="width: 100%; padding: 12px; border-radius: var(--radius); border: 2px solid var(--border);">
+                    </div>
+                    <div id="groupMembersSelect" style="margin: 1rem 0;"></div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">
+                        <i class="fas fa-plus-circle"></i> Create Group
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Messages Modal -->
+        <div id="messagesModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2><i class="fas fa-envelope"></i> Messages</h2>
+                    <button class="btn-small" onclick="openFriends()" style="margin-right: auto; margin-left: 1rem;">+
+                        New Chat</button>
+                    <span class="close" onclick="closeMessagesModal()">&times;</span>
+                </div>
+                <div class="messages-container">
+                    <div class="conversations-list" id="conversationsList">
+                        <div style="text-align: center; padding: 2rem;">Loading conversations...</div>
+                    </div>
+                    <div class="chat-area" id="chatArea">
+                        <div class="no-chat">
+                            <i class="fas fa-comment-dots" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <p>Select a conversation to start chatting</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Groups Modal -->
+        <div id="groupsModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2><i class="fas fa-users"></i> Groups</h2>
+                    <button class="btn-small" onclick="showCreateGroupModal()">+ New Group</button>
+                    <span class="close" onclick="closeGroupsModal()">&times;</span>
+                </div>
+                <div id="groupsContent"></div>
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div id="createGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create Group Chat</h2>
+                    <span class="close" onclick="closeCreateGroupModal()">&times;</span>
+                </div>
+                <form id="createGroupForm">
+                    <input type="text" id="groupName" placeholder="Group Name" required>
+                    <div id="groupMembersSelect"></div>
+                    <button type="submit" class="btn-primary">Create Group</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Friend Requests Modal -->
+        <div id="friendRequestsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-user-friends"></i> Friend Requests</h2>
+                    <span class="close" onclick="closeFriendRequestsModal()">&times;</span>
+                </div>
+                <div id="friendRequestsList"></div>
+            </div>
+        </div>
+
+        <!-- Friends Modal -->
+        <div id="friendsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-users"></i> Friends</h2>
+                    <span class="close" onclick="closeFriendsModal()">&times;</span>
+                </div>
+                <input type="text" id="friendSearch" placeholder="Search friends..." class="search-input">
+                <div id="friendsList"></div>
+            </div>
+        </div>
+
+        <!-- Notifications Modal -->
+        <div id="notificationsModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2><i class="fas fa-bell"></i> Notifications</h2>
+                    <button class="btn-small" onclick="clearAllNotifications()">Clear All</button>
+                    <span class="close" onclick="closeNotificationsModal()">&times;</span>
+                </div>
+                <div id="notificationsList"></div>
+            </div>
+        </div>
+
+        <!-- Admin Panel Modal - Update with more features -->
+        <!-- Admin Panel Modal -->
+        <div id="adminPanelModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2><i class="fas fa-shield-alt"></i> Admin Control Panel</h2>
+                    <span class="close" onclick="closeAdminPanel()">&times;</span>
+                </div>
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="showAdminTab('users')">👥 Users</button>
+                    <button class="tab-btn" onclick="showAdminTab('posts')">📝 Posts</button>
+                    <button class="tab-btn" onclick="showAdminTab('suspended')">⏰ Suspended</button>
+                    <button class="tab-btn" onclick="showAdminTab('warnings')">⚠️ Warnings</button>
+                </div>
+                <div id="adminContent"></div>
+            </div>
+        </div>
+
+        <!-- Admin Edit Post Modal -->
+        <div id="adminEditPostModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-edit"></i> Edit Post (Admin)</h2>
+                    <span class="close" onclick="closeAdminEditPostModal()">&times;</span>
+                </div>
+                <form id="adminEditPostForm" style="padding: 1.5rem;">
+                    <input type="hidden" id="adminEditPostId">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="adminEditTitle" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="adminEditDescription" rows="5" class="form-input"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                        <button type="button" class="btn-secondary" onclick="closeAdminEditPostModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Voice Call Modal -->
+        <div id="callModal" class="modal">
+            <div class="modal-content call-container">
+                <div class="call-header">
+                    <h3 id="callWithName">Calling...</h3>
+                    <span class="close" onclick="endCall()">&times;</span>
+                </div>
+                <div class="call-avatar">
+                    <img id="callAvatar" alt="Caller avatar">
+                </div>
+                <div class="call-status" id="callStatus">Ringing...</div>
+                <div class="call-actions">
+                    <button id="acceptCallBtn" class="call-btn accept" onclick="acceptCall()" style="display: none;">
+                        <i class="fas fa-phone"></i> Accept
+                    </button>
+                    <button id="rejectCallBtn" class="call-btn reject" onclick="rejectCall()">
+                        <i class="fas fa-phone-slash"></i> Decline
+                    </button>
+                    <button id="endCallBtn" class="call-btn end" onclick="endCall()" style="display: none;">
+                        <i class="fas fa-phone-slash"></i> End Call
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="lightbox-modal" style="display: none;">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <button class="lightbox-prev" onclick="changeImage(-1)">&#10094;</button>
+        <button class="lightbox-next" onclick="changeImage(1)">&#10095;</button>
+        <img id="lightboxImage" class="lightbox-image" alt="Full size image">
+        <div id="lightboxCounter" class="lightbox-counter"></div>
+    </div>
+    <script src="/app.js"></script>
+</body>
+
+</html>
