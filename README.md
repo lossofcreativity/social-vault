@@ -13,7 +13,8 @@
 
 ## 🌟 Live Demo
 
-> 🔗 **Live URL:** `https://social-vault-qww2.onrender.com/` `(Free Trial Save Data for limited time!)`
+> 🔗 **Live URL:** `https://social-vault-qww2.onrender.com/` `Free Trial Save Data for limited time!`
+> 
 > **Warning:** `The preview don't save data! A good or localhost can save data!`
 >
 > Admin Details are in server.js
