@@ -181,11 +181,11 @@ const canAccessMessages = (req, res, next) => {
 // ============ INITIALIZE ADMIN ============
 const initAdmin = async () => {
     const users = readData('users');
-    const adminEmail = process.env.ADMIN_EMAIL || 'shresthaavaya112@gmail.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@socialvault.com';
 
     if (!Object.values(users).some(u => u.email === adminEmail)) {
         const adminId = 'admin_' + Date.now();
-        const hashedPassword = await bcrypt.hash('qwertyuiop@112', 10);
+        const hashedPassword = await bcrypt.hash('@dm1n@s0c1@1v@ult.com', 10);
 
         users[adminId] = {
             id: adminId,
