@@ -13,7 +13,10 @@
 
 ## 🌟 Live Demo
 
-> 🔗 **Live URL:** `https://your-render-url.onrender.com`
+> 🔗 **Live URL:** `https://social-vault-qww2.onrender.com/` `(Free Trial Save Data for limited time!)`
+> **Warning:** `The preview don't save data! A good or localhost can save data!`
+>
+> Admin Details are in server.js
 ---
 
 ## ✨ Features
@@ -33,8 +36,6 @@
 |---------|-------------|
 | 👫 **Friends** | Send/accept/decline friend requests |
 | 💬 **Real-time Chat** | 1-on-1 messaging with typing indicators |
-| 👥 **Group Chats** | Create and manage group conversations |
-| 📞 **Voice Calls** | Peer-to-peer voice calls via WebRTC |
 | 🔔 **Notifications** | Real-time alerts for likes, comments, shares |
 
 ### 🎨 User Experience
