@@ -82,10 +82,7 @@
 - npm (v8 or higher)
 
 ## Thanks to all Contributors
-[![Social Vault Contributors](https://contrib.rocks)](https://github.com)
-
-
-
+[![Contributors](https://shields.io)](https://github.com)
 
 ### Installation
 
