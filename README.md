@@ -8,6 +8,7 @@
 [![Socket.io](https://img.shields.io/badge/Socket.io-4.x-black.svg)](https://socket.io/)
 
 > **A complete, production-ready social media platform like Instagram + Twitter combined.** Share posts, create reels, chat with friends, and build your community — all with a beautiful modern interface.
+> Change Admin info in server.js from line `182` to `188`.
 
 ---
 
