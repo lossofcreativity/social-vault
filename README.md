@@ -81,8 +81,6 @@
 - Node.js (v16 or higher)
 - npm (v8 or higher)
 
-## Thanks to all Contributors
-[![Contributors](https://shields.io)](https://github.com)
 
 ### Installation
 
